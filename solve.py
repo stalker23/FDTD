@@ -1,22 +1,27 @@
 import numpy as np
 from matplotlib import pyplot as plt 
 import matplotlib.cm as cm 
+import os
+import timeit
 
+startTime = timeit.default_timer()
 ###########################################################
 ###################### Problem Setup ######################
 ###########################################################
 # Define Grid
 # Define Domain
-Nx = 4
-Ny = 8
+Nx = 15
+Ny = 5
 Lx = 4.0 # m
 Ly = 8.0 # m
 dx = Lx/(Nx-1) # m
 dy = Ly/(Ny-1) # m
 R_circle = np.array([2,4]) # m
 radius_circle = 1 # m
-dt = 0.001 # sec
-numSteps = 10 # number of time steps
+dt = 0.01 # sec
+numSteps = 100 # number of time steps
+printSteps = 1;
+figureDirectory = os.path.realpath('./')+'\\Figures\\step'
 
 # Define Parameter Relations
 c0 = 299792458 # m/s
@@ -87,33 +92,47 @@ for j in range(1,Nx-1):
             m_Hzz = -c0*dt/mu_zz_Gold
             m_Exx = c0*dt/epsilon_xx_Gold
             m_Eyy = c0*dt/epsilon_yy_Gold
-            m_Ezz = c0*dt/epsilon_zz_Gold  
+            m_Ezz = c0*dt/epsilon_zz_Gold
+            
+# Apply BCs
+Hic = 5;
+Eic = 5;
+for i in range(1, Ny-1):
+    j = 1
+    Hx[i][j] = Hic
+    Hy[i][j] = Hic
+    Hz[i][j] = Hic
+    Ex[i][j] = Eic
+    Ey[i][j] = Eic
+    Ez[i][j] = Eic
  
 ###########################################################           
 ###################### Iterate the Solution ###############
 ###########################################################
 for k in range(0,numSteps):
+    print(k)
+    # Update Time Varying BCs
+    
     # Apply Periodic BC on bottom edge 
     for j in range(1, Nx-1):
-        i = 0
-        Hx[i][j] = Hx[i-1][j]
-        Hz[i][j] = Hz[i-1][j]
+        i = 1
+        Hx[i-1][j] = Hx[i][j]
+        Hz[i-1][j] = Hz[i][j]
     # Apply Periodic BC on top edge 
     for j in range(1, Nx-1):
-        i = Ny-1
-        Ex[i][j] = Ex[i+1][j]
-        Ey[i][j] = Ey[i][j]
-        Ez[i][j] = Ez[i+1][j]
+        i = Ny
+        Ex[i+1][j] = Ex[i][j]
+        Ez[i+1][j] = Ez[i][j]
     # Apply Periodic BC on left edge 
     for i in range(1, Ny-1):
-        j = 0
-        Hy[i][j] = Hy[i][j-1]
-        Hz[i][j] = Hz[i][j-1]
+        j = 1
+        Hy[i][j-1] = Hy[i][j]
+        Hz[i][j-1] = Hz[i][j]
      # Apply Periodic BC on right edge 
     for i in range(1, Ny-1):
-        j = Nx-1
-        Ey[i][j] = Ey[i][j+1]
-        Ez[i][j] = Ez[i][j+1]
+        j = Nx
+        Ey[i][j+1] = Ey[i][j]
+        Ez[i][j+1] = Ez[i][j]
 
     for j in range(1,Nx-1):
         for i in range(1,Ny-1):
@@ -134,10 +153,14 @@ for k in range(0,numSteps):
             Ex[i][j] = m_Exx*(Hzy) + Ex_old[i][j]
             Ey[i][j] = m_Eyy*(-Hzx) + Ey_old[i][j]
             Ez[i][j] = m_Ezz*(Hyx-Hxy) + Ez_old[i][j]
+            
             # Print figure
-            Z = X * np.sinc(X ** 2 + Y ** 2)
-            plt.pcolormesh(X, Y, Z, cmap = cm.jet) 
-            plt.savefig('step' + str(k) + '.png')
+            if (k+printSteps)%printSteps == 0:
+                plt.pcolormesh(X, Y, Ex, cmap = cm.jet) 
+                plt.savefig(figureDirectory + str(k) + '.png')
+                
+stopTime = timeit.default_timer()
+runTime = stopTime-startTime
             
                     
 
